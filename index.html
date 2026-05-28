@@ -22,37 +22,112 @@
       box-sizing: border-box;
       padding-left: 0;
       color: #2f63d9;
-      font-size: 32px;
+      font-size: 44px;
       font-weight: 800;
+      line-height: 1.2;
       letter-spacing: 1px;
       white-space: nowrap;
+    }
+
+    .error {
+      color: #999;
+      font-size: 18px;
+      font-weight: 400;
     }
   </style>
 </head>
 <body>
-  <div class="title" id="dateTitle"></div>
+  <div class="title" id="dateTitle">Loading...</div>
 
   <script>
-    function getWeekNumberMonday(date) {
-      const start = new Date(date.getFullYear(), 0, 1);
-      const days = Math.floor((date - start) / 86400000) + 1;
-      const startDay = start.getDay() === 0 ? 7 : start.getDay();
-      return Math.ceil((days + startDay - 1) / 7);
+    function pad2(n) {
+      return String(n).padStart(2, "0");
     }
 
-    function updateTitle() {
-      const now = new Date();
+    function formatTodayForDisplay(date) {
+      const y = date.getFullYear();
+      const m = pad2(date.getMonth() + 1);
+      const d = pad2(date.getDate());
+      return `${y}年${m}月${d}日`;
+    }
 
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const day = String(now.getDate()).padStart(2, "0");
-      const week = getWeekNumberMonday(now);
+    function normalizeDate(value) {
+      if (!value) return "";
 
-      document.getElementById("dateTitle").textContent =
-        `${year}年${month}月${day}日 WK${week}`;
+      // 兼容：2025/1/1 0:00、2025/01/01、2025-01-01
+      const text = String(value).trim().split(" ")[0].replaceAll("-", "/");
+      const parts = text.split("/");
+
+      if (parts.length < 3) return "";
+
+      const y = parts[0];
+      const m = pad2(parts[1]);
+      const d = pad2(parts[2]);
+
+      return `${y}-${m}-${d}`;
+    }
+
+    function todayKey(date) {
+      const y = date.getFullYear();
+      const m = pad2(date.getMonth() + 1);
+      const d = pad2(date.getDate());
+      return `${y}-${m}-${d}`;
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
+      const headers = lines[0].split(",").map(h => h.trim());
+
+      return lines.slice(1).map(line => {
+        const values = line.split(",").map(v => v.trim());
+        const row = {};
+        headers.forEach((h, i) => {
+          row[h] = values[i] || "";
+        });
+        return row;
+      });
+    }
+
+    async function updateTitle() {
+      const titleEl = document.getElementById("dateTitle");
+
+      try {
+        const res = await fetch("./sony_calendar.csv?t=" + Date.now());
+        const csvText = await res.text();
+        const rows = parseCSV(csvText);
+
+        const now = new Date();
+        const key = todayKey(now);
+
+        const matched = rows.find(row => normalizeDate(row.date) === key);
+
+        if (!matched) {
+          titleEl.className = "title error";
+          titleEl.textContent = `未在 sony_calendar 中匹配到今天：${formatTodayForDisplay(now)}`;
+          return;
+        }
+
+        const displayDate = formatTodayForDisplay(now);
+        const week = matched.week || "";
+        const month = matched.month || "";
+        const fiscalYear = matched.fiscal_year || "";
+
+        // 当前展示格式：2026年05月28日 WK22
+        titleEl.textContent = `${displayDate} ${week}`;
+
+        // 如果领导后面想显示 FY + 月 + 周，可以改成下面这一行：
+        // titleEl.textContent = `${displayDate} ${fiscalYear} ${month} ${week}`;
+
+      } catch (err) {
+        titleEl.className = "title error";
+        titleEl.textContent = "sony_calendar 读取失败";
+        console.error(err);
+      }
     }
 
     updateTitle();
+
+    // 每分钟刷新一次，不需要你每天手动改
     setInterval(updateTitle, 60 * 1000);
   </script>
 </body>
