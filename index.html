@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Date Title</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: Arial, "Microsoft YaHei", "PingFang SC", sans-serif;
+      overflow: hidden;
+    }
+
+    .title {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      box-sizing: border-box;
+      padding-left: 0;
+      color: #2f63d9;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="title" id="dateTitle"></div>
+
+  <script>
+    function getWeekNumberMonday(date) {
+      const start = new Date(date.getFullYear(), 0, 1);
+      const days = Math.floor((date - start) / 86400000) + 1;
+      const startDay = start.getDay() === 0 ? 7 : start.getDay();
+      return Math.ceil((days + startDay - 1) / 7);
+    }
+
+    function updateTitle() {
+      const now = new Date();
+
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const week = getWeekNumberMonday(now);
+
+      document.getElementById("dateTitle").textContent =
+        `${year}年${month}月${day}日 WK${week}`;
+    }
+
+    updateTitle();
+    setInterval(updateTitle, 60 * 1000);
+  </script>
+</body>
+</html>
