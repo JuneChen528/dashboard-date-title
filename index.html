@@ -26,34 +26,37 @@
       align-items: flex-start;
       justify-content: flex-start;
 
-      /*
-        模仿右侧「Achi% 时间周期」卡片的内容位置
-        文字放在左上区域，不再垂直居中
-      */
-      padding: 28px 28px;
+      /* 与右侧时间周期卡片保持相近的内容留白 */
+      padding: 28px;
 
-      color: #1f2329;
+      color: #2f63d9;
     }
 
     /* 第一行：日期 */
     .date-main {
-      color: #1f2329;
-      font-size: 20px;
-      font-weight: 400;
-      line-height: 1.5;
+      color: #2f63d9;
+
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.4;
+
       letter-spacing: 0;
+
       white-space: nowrap;
     }
 
     /* 第二行：WK */
     .date-week {
-      margin-top: 14px;
+      margin-top: 10px;
 
-      color: #8f959e;
+      color: #2f63d9;
+
       font-size: 18px;
-      font-weight: 400;
-      line-height: 1.5;
+      font-weight: 700;
+      line-height: 1.4;
+
       letter-spacing: 0;
+
       white-space: nowrap;
     }
 
@@ -63,6 +66,7 @@
       font-size: 18px;
       font-weight: 400;
       line-height: 1.5;
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -146,7 +150,6 @@
     }
 
     async function updateTitle() {
-      const titleEl = document.getElementById("dateTitle");
       const dateMainEl = document.getElementById("dateMain");
       const dateWeekEl = document.getElementById("dateWeek");
 
@@ -176,6 +179,7 @@
 
         if (!matched) {
           dateMainEl.className = "error";
+
           dateMainEl.textContent =
             `未匹配到今天：${formatTodayForDisplay(now)}`;
 
@@ -186,35 +190,18 @@
 
         const displayDate = formatTodayForDisplay(now);
         const week = matched.week || "";
-        const month = matched.month || "";
-        const fiscalYear = matched.fiscal_year || "";
 
         /*
-          左侧最终展示：
+          最终展示：
 
           2026年08月12日
           WK33
-
-          对应右侧：
-
-          Achi% 时间周期
-          请选择
         */
         dateMainEl.className = "date-main";
         dateWeekEl.className = "date-week";
 
         dateMainEl.textContent = displayDate;
         dateWeekEl.textContent = week;
-
-        /*
-          如果以后想把第二行改成：
-          FY26 Aug WK33
-
-          使用：
-
-          dateWeekEl.textContent =
-            `${fiscalYear} ${month} ${week}`;
-        */
 
       } catch (err) {
         dateMainEl.className = "error";
