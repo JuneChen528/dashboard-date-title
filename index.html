@@ -4,10 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Date Title</title>
+
   <style>
     html, body {
       margin: 0;
       padding: 0;
+      width: 100%;
+      height: 100%;
       background: transparent;
       font-family: Arial, "Microsoft YaHei", "PingFang SC", sans-serif;
       overflow: hidden;
@@ -16,26 +19,37 @@
     .title {
       width: 100vw;
       height: 100vh;
+
       display: flex;
       align-items: center;
       justify-content: flex-start;
+
       box-sizing: border-box;
+
       padding-left: 0;
+      padding-right: 8px;
+
       color: #2f63d9;
-      font-size: 44px;
-      font-weight: 800;
-      line-height: 1.2;
-      letter-spacing: 1px;
+
+      /* 根据内嵌网页宽度自动缩放字体 */
+      font-size: clamp(16px, 3.5vw, 24px);
+
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: 0;
+
+      /* 日期 + WK 保持在同一行 */
       white-space: nowrap;
     }
 
     .error {
       color: #999;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 400;
     }
   </style>
 </head>
+
 <body>
   <div class="title" id="dateTitle">Loading...</div>
 
@@ -48,14 +62,22 @@
       const y = date.getFullYear();
       const m = pad2(date.getMonth() + 1);
       const d = pad2(date.getDate());
+
       return `${y}年${m}月${d}日`;
     }
 
     function normalizeDate(value) {
       if (!value) return "";
 
-      // 兼容：2025/1/1 0:00、2025/01/01、2025-01-01
-      const text = String(value).trim().split(" ")[0].replaceAll("-", "/");
+      // 兼容：
+      // 2025/1/1 0:00
+      // 2025/01/01
+      // 2025-01-01
+      const text = String(value)
+        .trim()
+        .split(" ")[0]
+        .replaceAll("-", "/");
+
       const parts = text.split("/");
 
       if (parts.length < 3) return "";
@@ -71,19 +93,32 @@
       const y = date.getFullYear();
       const m = pad2(date.getMonth() + 1);
       const d = pad2(date.getDate());
+
       return `${y}-${m}-${d}`;
     }
 
     function parseCSV(text) {
       const lines = text.trim().split(/\r?\n/);
-      const headers = lines[0].split(",").map(h => h.trim());
+
+      if (!lines.length) {
+        return [];
+      }
+
+      const headers = lines[0]
+        .split(",")
+        .map(h => h.trim());
 
       return lines.slice(1).map(line => {
-        const values = line.split(",").map(v => v.trim());
+        const values = line
+          .split(",")
+          .map(v => v.trim());
+
         const row = {};
+
         headers.forEach((h, i) => {
           row[h] = values[i] || "";
         });
+
         return row;
       });
     }
@@ -92,18 +127,35 @@
       const titleEl = document.getElementById("dateTitle");
 
       try {
-        const res = await fetch("./sony_calendar.csv?t=" + Date.now());
+        const res = await fetch(
+          "./sony_calendar.csv?t=" + Date.now(),
+          {
+            cache: "no-store"
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(
+            `sony_calendar.csv 请求失败：HTTP ${res.status}`
+          );
+        }
+
         const csvText = await res.text();
         const rows = parseCSV(csvText);
 
         const now = new Date();
         const key = todayKey(now);
 
-        const matched = rows.find(row => normalizeDate(row.date) === key);
+        const matched = rows.find(
+          row => normalizeDate(row.date) === key
+        );
 
         if (!matched) {
           titleEl.className = "title error";
-          titleEl.textContent = `未在 sony_calendar 中匹配到今天：${formatTodayForDisplay(now)}`;
+
+          titleEl.textContent =
+            `未在 sony_calendar 中匹配到今天：${formatTodayForDisplay(now)}`;
+
           return;
         }
 
@@ -112,22 +164,36 @@
         const month = matched.month || "";
         const fiscalYear = matched.fiscal_year || "";
 
-        // 当前展示格式：2026年05月28日 WK22
+        /*
+          当前展示格式：
+
+          2026年08月12日 WK33
+        */
+        titleEl.className = "title";
         titleEl.textContent = `${displayDate} ${week}`;
 
-        // 如果领导后面想显示 FY + 月 + 周，可以改成下面这一行：
-        // titleEl.textContent = `${displayDate} ${fiscalYear} ${month} ${week}`;
+        /*
+          如果后面需要展示：
+          2026年08月12日 FY26 Aug WK33
+
+          就把上面一行改成：
+
+          titleEl.textContent =
+            `${displayDate} ${fiscalYear} ${month} ${week}`;
+        */
 
       } catch (err) {
         titleEl.className = "title error";
         titleEl.textContent = "sony_calendar 读取失败";
+
         console.error(err);
       }
     }
 
+    // 页面打开立即更新一次
     updateTitle();
 
-    // 每分钟刷新一次，不需要你每天手动改
+    // 每分钟自动刷新一次
     setInterval(updateTitle, 60 * 1000);
   </script>
 </body>
