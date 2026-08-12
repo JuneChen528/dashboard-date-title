@@ -19,40 +19,59 @@
     .title {
       width: 100vw;
       height: 100vh;
-
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-
       box-sizing: border-box;
 
-      /* 左右留白，避免贴边 */
-      padding-left: 24px !important;
-      padding-right: 24px !important;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
 
-      color: #2f63d9;
+      /*
+        模仿右侧「Achi% 时间周期」卡片的内容位置
+        文字放在左上区域，不再垂直居中
+      */
+      padding: 28px 28px;
 
-      /* 固定字号，不再受 vw 影响 */
-      font-size: 38px !important;
+      color: #1f2329;
+    }
 
-      font-weight: 700;
-      line-height: 1.15;
+    /* 第一行：日期 */
+    .date-main {
+      color: #1f2329;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.5;
       letter-spacing: 0;
-
-      /* 日期 + WK 保持在同一行 */
       white-space: nowrap;
     }
 
-    .error {
-      color: #999;
-      font-size: 18px !important;
+    /* 第二行：WK */
+    .date-week {
+      margin-top: 14px;
+
+      color: #8f959e;
+      font-size: 18px;
       font-weight: 400;
+      line-height: 1.5;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    /* 异常提示 */
+    .error {
+      color: #8f959e;
+      font-size: 18px;
+      font-weight: 400;
+      line-height: 1.5;
     }
   </style>
 </head>
 
 <body>
-  <div class="title" id="dateTitle">Loading...</div>
+  <div class="title" id="dateTitle">
+    <div class="date-main" id="dateMain">Loading...</div>
+    <div class="date-week" id="dateWeek"></div>
+  </div>
 
   <script>
     function pad2(n) {
@@ -70,10 +89,12 @@
     function normalizeDate(value) {
       if (!value) return "";
 
-      // 兼容：
-      // 2025/1/1 0:00
-      // 2025/01/01
-      // 2025-01-01
+      /*
+        兼容：
+        2025/1/1 0:00
+        2025/01/01
+        2025-01-01
+      */
       const text = String(value)
         .trim()
         .split(" ")[0]
@@ -126,6 +147,8 @@
 
     async function updateTitle() {
       const titleEl = document.getElementById("dateTitle");
+      const dateMainEl = document.getElementById("dateMain");
+      const dateWeekEl = document.getElementById("dateWeek");
 
       try {
         const res = await fetch(
@@ -152,10 +175,11 @@
         );
 
         if (!matched) {
-          titleEl.className = "title error";
+          dateMainEl.className = "error";
+          dateMainEl.textContent =
+            `未匹配到今天：${formatTodayForDisplay(now)}`;
 
-          titleEl.textContent =
-            `未在 sony_calendar 中匹配到今天：${formatTodayForDisplay(now)}`;
+          dateWeekEl.textContent = "";
 
           return;
         }
@@ -166,26 +190,37 @@
         const fiscalYear = matched.fiscal_year || "";
 
         /*
-          当前展示格式：
+          左侧最终展示：
 
-          2026年08月12日 WK33
+          2026年08月12日
+          WK33
+
+          对应右侧：
+
+          Achi% 时间周期
+          请选择
         */
-        titleEl.className = "title";
-        titleEl.textContent = `${displayDate} ${week}`;
+        dateMainEl.className = "date-main";
+        dateWeekEl.className = "date-week";
+
+        dateMainEl.textContent = displayDate;
+        dateWeekEl.textContent = week;
 
         /*
-          如果后面需要展示：
-          2026年08月12日 FY26 Aug WK33
+          如果以后想把第二行改成：
+          FY26 Aug WK33
 
-          就把上面一行改成：
+          使用：
 
-          titleEl.textContent =
-            `${displayDate} ${fiscalYear} ${month} ${week}`;
+          dateWeekEl.textContent =
+            `${fiscalYear} ${month} ${week}`;
         */
 
       } catch (err) {
-        titleEl.className = "title error";
-        titleEl.textContent = "sony_calendar 读取失败";
+        dateMainEl.className = "error";
+        dateMainEl.textContent = "sony_calendar 读取失败";
+
+        dateWeekEl.textContent = "";
 
         console.error(err);
       }
