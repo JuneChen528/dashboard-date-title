@@ -26,17 +26,18 @@
 
       box-sizing: border-box;
 
-      padding-left: 0;
-      padding-right: 8px;
+      /* 左右留出一点空间，不贴边 */
+      padding-left: 24px;
+      padding-right: 24px;
 
       color: #2f63d9;
 
-      /* 根据内嵌网页宽度自动缩放字体 */
-      font-size: clamp(16px, 3.5vw, 24px);
+      /* 仪表盘标题字号：比上一版大，但不会像 44px 那样溢出 */
+      font-size: clamp(28px, 5vw, 34px);
 
       font-weight: 700;
       line-height: 1.15;
-      letter-spacing: 0;
+      letter-spacing: 0.2px;
 
       /* 日期 + WK 保持在同一行 */
       white-space: nowrap;
@@ -44,7 +45,7 @@
 
     .error {
       color: #999;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 400;
     }
   </style>
